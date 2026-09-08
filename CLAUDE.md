@@ -20,13 +20,13 @@ Módulos por recurso bajo `src/<recurso>/`, con capas OOP y dependencias por con
 
 `src/app.ts` es una factoría (`createApp()`) separada de `src/server.ts` (listener) para que los tests monten la app sin abrir puerto.
 
-El módulo `tasks` es el ejemplo de referencia: al añadir un recurso nuevo, copiar su estructura.
+El módulo `audits` es el ejemplo de referencia: al añadir un recurso nuevo, copiar su estructura.
 
 ## Reglas
 
 - Código, comentarios y nombres en inglés; commits en español (formato conventional `tipo(scope): resumen`).
 - TDD cuando sea posible: test con supertest primero, luego implementación.
-- Errores de dominio como clases (`TaskNotFoundError`); el router los mapea a códigos HTTP.
+- Errores de dominio como clases (`AuditNotFoundError`); el router los mapea a códigos HTTP.
 - ESM: los imports relativos llevan extensión `.js`.
 
 ## Flujo de trabajo (live coding)
@@ -34,6 +34,6 @@ El módulo `tasks` es el ejemplo de referencia: al añadir un recurso nuevo, cop
 1. **Plan primero**: ante un enunciado nuevo, proponer endpoints y orden de escenarios ANTES de escribir código, y esperar confirmación del usuario.
 2. **Un escenario cada vez**, con TDD: test de integración con supertest → verlo fallar → implementación mínima → verde → refactor si procede.
 3. **Commit al cerrar cada escenario** en verde (formato `tipo(scope): resumen` en español).
-4. Recurso nuevo = copiar la estructura de 5 ficheros de `src/tasks/` con el lenguaje del dominio del ejercicio.
+4. Recurso nuevo = copiar la estructura de 5 ficheros de `src/audits/` con el lenguaje del dominio del ejercicio.
 5. Cambios pequeños y explicados: nada de generar la API entera de golpe.
 6. El servidor (`pnpm dev`) y el watch (`pnpm test:watch`) los ejecuta el usuario en sus terminales; no lanzarlos desde la sesión.
