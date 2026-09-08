@@ -17,7 +17,6 @@ headers {
 
 body:json {
   {
-    "fechaHora": "2027-03-10T10:00:00",
     "cliente": "acme@example.com",
     "tecnico": "Ana Ruiz"
   }
@@ -30,7 +29,8 @@ script:post-response {
 }
 
 docs {
-  Creates an audit in PENDIENTE state. 201 with the created resource;
-  400 if a field is missing/invalid or estado is sent; 409 if it overlaps.
+  Creates an audit in PENDIENTE state at the first free slot for the
+  technician/client (fechaHora is assigned by the server and not accepted in the body).
+  201 with the created resource; 400 if a field is missing or fechaHora/estado is sent.
   The returned id is saved to {{auditId}} for the next requests.
 }
