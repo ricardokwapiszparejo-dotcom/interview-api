@@ -4,9 +4,9 @@ Esqueleto de API REST para ejercicio de live coding. Express 5 + TypeScript (str
 
 ## Comandos
 
-- `npm run dev` — servidor con hot reload (tsx watch) en :3000
-- `npm test` — tests (Vitest + supertest)
-- `npm run typecheck` — comprobación de tipos sin emitir
+- `pnpm dev` — servidor con hot reload (tsx watch) en :3000
+- `pnpm test` — tests (Vitest + supertest)
+- `pnpm typecheck` — comprobación de tipos sin emitir
 
 ## Arquitectura
 
