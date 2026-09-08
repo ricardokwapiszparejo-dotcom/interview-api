@@ -1,0 +1,19 @@
+meta {
+  name: Get Audit
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/audits/{{auditId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  Returns one audit by id. 404 if it does not exist.
+}

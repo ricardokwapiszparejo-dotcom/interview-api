@@ -1,0 +1,29 @@
+meta {
+  name: Update Audit
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{baseUrl}}/audits/{{auditId}}
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "fechaHora": "2027-03-10T12:00:00",
+    "cliente": "acme@example.com",
+    "tecnico": "Ana Ruiz"
+  }
+}
+
+docs {
+  Full replacement of a PENDIENTE audit, revalidating overlap (excluding itself).
+  200; 400 invalid body; 404 missing; 409 overlap or non-editable state.
+}

@@ -1,0 +1,20 @@
+meta {
+  name: Cancel Audit
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{baseUrl}}/audits/{{auditId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  Cancels the audit (estado CANCELADA, the row is kept and listed). 204;
+  404 if missing; 409 if already cancelled. Cancelling frees the slot immediately.
+}

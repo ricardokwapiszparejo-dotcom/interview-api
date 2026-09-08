@@ -1,0 +1,30 @@
+meta {
+  name: Confirm Audit
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{baseUrl}}/audits/{{auditId}}
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "fechaHora": "2027-03-10T12:00:00",
+    "cliente": "acme@example.com",
+    "tecnico": "Ana Ruiz",
+    "estado": "CONFIRMADA"
+  }
+}
+
+docs {
+  PUT with estado CONFIRMADA moves a PENDIENTE audit to CONFIRMADA.
+  After this, further edits return 409 (a confirmed audit is immutable; only DELETE cancels it).
+}

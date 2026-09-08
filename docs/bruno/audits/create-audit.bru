@@ -1,0 +1,36 @@
+meta {
+  name: Create Audit
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/audits
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "fechaHora": "2027-03-10T10:00:00",
+    "cliente": "acme@example.com",
+    "tecnico": "Ana Ruiz"
+  }
+}
+
+script:post-response {
+  if (res.body.id) {
+    bru.setEnvVar("auditId", res.body.id);
+  }
+}
+
+docs {
+  Creates an audit in PENDIENTE state. 201 with the created resource;
+  400 if a field is missing/invalid or estado is sent; 409 if it overlaps.
+  The returned id is saved to {{auditId}} for the next requests.
+}

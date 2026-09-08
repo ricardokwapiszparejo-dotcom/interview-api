@@ -1,11 +1,11 @@
 meta {
-  name: List Tasks
+  name: List Audits
   type: http
-  seq: 1
+  seq: 4
 }
 
 get {
-  url: {{baseUrl}}/tasks
+  url: {{baseUrl}}/audits
   body: none
   auth: none
 }
@@ -15,5 +15,5 @@ headers {
 }
 
 docs {
-  Returns all tasks. 200 with array.
+  Lists all audits, cancelled ones included. 200.
 }
