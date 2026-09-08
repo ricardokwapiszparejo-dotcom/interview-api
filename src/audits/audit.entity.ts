@@ -6,7 +6,7 @@ export class InvalidStateTransitionError extends Error {
 
 export type AuditStatus = 'PENDIENTE' | 'CONFIRMADA' | 'CANCELADA';
 
-const AUDIT_DURATION_MS = 60 * 60 * 1000;
+export const AUDIT_DURATION_MS = 60 * 60 * 1000;
 
 export class Audit {
   constructor(
@@ -22,9 +22,9 @@ export class Audit {
   }
 
   // Exclusive boundary: an audit ending at 11:00 does not clash with one starting at 11:00.
-  update(dateTime: Date, client: string, technician: string): void {
+  // dateTime is system-assigned at creation and never edited from outside.
+  update(client: string, technician: string): void {
     if (this.status !== 'PENDIENTE') throw new InvalidStateTransitionError(this.status, 'edit');
-    this.dateTime = dateTime;
     this.client = client;
     this.technician = technician;
   }

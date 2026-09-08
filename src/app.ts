@@ -4,7 +4,12 @@ import { AuditService } from './audits/audit.service.js';
 import { auditsRouter } from './audits/audits.router.js';
 
 // App factory kept separate from the listener so tests can build an instance without binding a port.
-export function createApp(): Express {
+export interface AppDeps {
+  // Clock used for slot auto-assignment; tests pin it for determinism.
+  now?: () => Date;
+}
+
+export function createApp(deps: AppDeps = {}): Express {
   const app = express();
   app.use(express.json());
 
@@ -13,7 +18,7 @@ export function createApp(): Express {
   });
 
   // Composition root: the only place that knows concrete implementations.
-  const auditService = new AuditService(new InMemoryAuditRepository());
+  const auditService = new AuditService(new InMemoryAuditRepository(), deps.now);
   app.use('/audits', auditsRouter(auditService));
 
   return app;
