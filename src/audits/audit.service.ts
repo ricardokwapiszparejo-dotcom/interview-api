@@ -33,6 +33,12 @@ export class AuditService {
     return this.repository.save(audit);
   }
 
+  async cancelAudit(id: string): Promise<void> {
+    const audit = await this.getAudit(id);
+    audit.cancel();
+    await this.repository.save(audit);
+  }
+
   // Rules 1.1-1.3: same technician or same client, cancelled audits do not block.
   private async ensureNoOverlap(candidate: Audit, excludeId?: string): Promise<void> {
     const audits = await this.repository.findAll();

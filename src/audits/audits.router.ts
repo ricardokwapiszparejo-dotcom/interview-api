@@ -1,5 +1,5 @@
 import { Router, type Response } from 'express';
-import type { Audit } from './audit.entity.js';
+import { InvalidStateTransitionError, type Audit } from './audit.entity.js';
 import { AuditNotFoundError, OverlappingAuditError, type AuditService } from './audit.service.js';
 
 // The wire format keeps the Spanish field names from the spec; the domain stays in English.
@@ -62,6 +62,15 @@ export function auditsRouter(service: AuditService): Router {
     }
   });
 
+  router.delete('/:id', async (req, res) => {
+    try {
+      await service.cancelAudit(req.params.id);
+      res.status(204).send();
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
   return router;
 }
 
@@ -70,7 +79,7 @@ function handleError(err: unknown, res: Response): void {
     res.status(404).json({ error: err.message });
     return;
   }
-  if (err instanceof OverlappingAuditError) {
+  if (err instanceof OverlappingAuditError || err instanceof InvalidStateTransitionError) {
     res.status(409).json({ error: err.message });
     return;
   }

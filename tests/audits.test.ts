@@ -123,3 +123,38 @@ describe('POST /audits · overlap rules', () => {
     expect(res.status).toBe(201);
   });
 });
+
+describe('DELETE /audits/:id', () => {
+  const base = { fechaHora: '2027-03-10T10:00:00', cliente: 'acme', tecnico: 'Ana Ruiz' };
+
+  it('cancels the audit and keeps it in the listing', async () => {
+    const app = createApp();
+    const { body: created } = await request(app).post('/audits').send(base);
+
+    expect((await request(app).delete(`/audits/${created.id}`)).status).toBe(204);
+
+    const detail = await request(app).get(`/audits/${created.id}`);
+    expect(detail.body.estado).toBe('CANCELADA');
+    expect((await request(app).get('/audits')).body).toHaveLength(1);
+  });
+
+  it('returns 404 for a missing audit', async () => {
+    expect((await request(createApp()).delete('/audits/nope')).status).toBe(404);
+  });
+
+  it('rejects cancelling an already cancelled audit', async () => {
+    const app = createApp();
+    const { body: created } = await request(app).post('/audits').send(base);
+    await request(app).delete(`/audits/${created.id}`);
+
+    expect((await request(app).delete(`/audits/${created.id}`)).status).toBe(409);
+  });
+
+  it('frees the slot: a new audit can take a cancelled one\'s place', async () => {
+    const app = createApp();
+    const { body: created } = await request(app).post('/audits').send(base);
+    await request(app).delete(`/audits/${created.id}`);
+
+    expect((await request(app).post('/audits').send(base)).status).toBe(201);
+  });
+});
