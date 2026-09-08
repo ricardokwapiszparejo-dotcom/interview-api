@@ -40,3 +40,41 @@ describe('POST /audits', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('GET /audits', () => {
+  it('lists all audits', async () => {
+    const app = createApp();
+    expect((await request(app).get('/audits')).body).toEqual([]);
+
+    await request(app).post('/audits').send({
+      fechaHora: '2027-03-10T10:00:00',
+      cliente: 'acme',
+      tecnico: 'Ana',
+    });
+
+    const res = await request(app).get('/audits');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].estado).toBe('PENDIENTE');
+  });
+});
+
+describe('GET /audits/:id', () => {
+  it('returns the audit detail', async () => {
+    const app = createApp();
+    const { body: created } = await request(app).post('/audits').send({
+      fechaHora: '2027-03-10T10:00:00',
+      cliente: 'acme',
+      tecnico: 'Ana',
+    });
+
+    const res = await request(app).get(`/audits/${created.id}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(created);
+  });
+
+  it('returns 404 for a missing audit', async () => {
+    const res = await request(createApp()).get('/audits/nope');
+    expect(res.status).toBe(404);
+  });
+});

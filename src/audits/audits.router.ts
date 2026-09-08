@@ -1,6 +1,6 @@
-import { Router } from 'express';
+import { Router, type Response } from 'express';
 import type { Audit } from './audit.entity.js';
-import type { AuditService } from './audit.service.js';
+import { AuditNotFoundError, type AuditService } from './audit.service.js';
 
 // The wire format keeps the Spanish field names from the spec; the domain stays in English.
 function toResponse(audit: Audit) {
@@ -36,6 +36,18 @@ function parseBody(body: unknown): { dateTime: Date; client: string; technician:
 export function auditsRouter(service: AuditService): Router {
   const router = Router();
 
+  router.get('/', async (_req, res) => {
+    res.json((await service.listAudits()).map(toResponse));
+  });
+
+  router.get('/:id', async (req, res) => {
+    try {
+      res.json(toResponse(await service.getAudit(req.params.id)));
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
   router.post('/', async (req, res) => {
     const parsed = parseBody(req.body);
     if (!parsed) {
@@ -47,4 +59,12 @@ export function auditsRouter(service: AuditService): Router {
   });
 
   return router;
+}
+
+function handleError(err: unknown, res: Response): void {
+  if (err instanceof AuditNotFoundError) {
+    res.status(404).json({ error: err.message });
+    return;
+  }
+  throw err;
 }
