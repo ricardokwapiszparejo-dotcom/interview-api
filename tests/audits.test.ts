@@ -78,3 +78,48 @@ describe('GET /audits/:id', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('POST /audits · overlap rules', () => {
+  const base = { fechaHora: '2027-03-10T10:00:00', cliente: 'acme', tecnico: 'Ana Ruiz' };
+
+  async function appWithBaseAudit() {
+    const app = createApp();
+    expect((await request(app).post('/audits').send(base)).status).toBe(201);
+    return app;
+  }
+
+  it.each(['2027-03-10T09:30:00', '2027-03-10T10:30:00'])(
+    'rejects an overlapping audit for the same technician at %s',
+    async (fechaHora) => {
+      const app = await appWithBaseAudit();
+      const res = await request(app)
+        .post('/audits')
+        .send({ fechaHora, cliente: 'other-client', tecnico: base.tecnico });
+      expect(res.status).toBe(409);
+    },
+  );
+
+  it('rejects an overlapping audit for the same client', async () => {
+    const app = await appWithBaseAudit();
+    const res = await request(app)
+      .post('/audits')
+      .send({ fechaHora: '2027-03-10T10:30:00', cliente: base.cliente, tecnico: 'Other Tech' });
+    expect(res.status).toBe(409);
+  });
+
+  it('accepts a back-to-back audit (exclusive boundary)', async () => {
+    const app = await appWithBaseAudit();
+    const res = await request(app)
+      .post('/audits')
+      .send({ fechaHora: '2027-03-10T11:00:00', cliente: base.cliente, tecnico: base.tecnico });
+    expect(res.status).toBe(201);
+  });
+
+  it('accepts an overlapping audit for a different technician and client', async () => {
+    const app = await appWithBaseAudit();
+    const res = await request(app)
+      .post('/audits')
+      .send({ fechaHora: '2027-03-10T10:30:00', cliente: 'other-client', tecnico: 'Other Tech' });
+    expect(res.status).toBe(201);
+  });
+});

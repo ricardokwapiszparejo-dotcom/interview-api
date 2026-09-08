@@ -1,6 +1,6 @@
 import { Router, type Response } from 'express';
 import type { Audit } from './audit.entity.js';
-import { AuditNotFoundError, type AuditService } from './audit.service.js';
+import { AuditNotFoundError, OverlappingAuditError, type AuditService } from './audit.service.js';
 
 // The wire format keeps the Spanish field names from the spec; the domain stays in English.
 function toResponse(audit: Audit) {
@@ -54,8 +54,12 @@ export function auditsRouter(service: AuditService): Router {
       res.status(400).json({ error: 'fechaHora (ISO8601), cliente and tecnico are required; estado is not accepted' });
       return;
     }
-    const audit = await service.createAudit(parsed.dateTime, parsed.client, parsed.technician);
-    res.status(201).json(toResponse(audit));
+    try {
+      const audit = await service.createAudit(parsed.dateTime, parsed.client, parsed.technician);
+      res.status(201).json(toResponse(audit));
+    } catch (err) {
+      handleError(err, res);
+    }
   });
 
   return router;
@@ -64,6 +68,10 @@ export function auditsRouter(service: AuditService): Router {
 function handleError(err: unknown, res: Response): void {
   if (err instanceof AuditNotFoundError) {
     res.status(404).json({ error: err.message });
+    return;
+  }
+  if (err instanceof OverlappingAuditError) {
+    res.status(409).json({ error: err.message });
     return;
   }
   throw err;

@@ -14,4 +14,9 @@ export class Audit {
   get endsAt(): Date {
     return new Date(this.dateTime.getTime() + AUDIT_DURATION_MS);
   }
+
+  // Exclusive boundary: an audit ending at 11:00 does not clash with one starting at 11:00.
+  overlapsWith(other: Audit): boolean {
+    return this.dateTime < other.endsAt && other.dateTime < this.endsAt;
+  }
 }

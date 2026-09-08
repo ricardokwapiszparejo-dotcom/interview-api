@@ -8,6 +8,12 @@ export class AuditNotFoundError extends Error {
   }
 }
 
+export class OverlappingAuditError extends Error {
+  constructor() {
+    super('Audit overlaps with an existing one for the same technician or client');
+  }
+}
+
 export class AuditService {
   constructor(private readonly repository: AuditRepository) {}
 
@@ -21,7 +27,22 @@ export class AuditService {
     return audit;
   }
 
-  createAudit(dateTime: Date, client: string, technician: string): Promise<Audit> {
-    return this.repository.save(new Audit(randomUUID(), dateTime, client, technician));
+  async createAudit(dateTime: Date, client: string, technician: string): Promise<Audit> {
+    const audit = new Audit(randomUUID(), dateTime, client, technician);
+    await this.ensureNoOverlap(audit);
+    return this.repository.save(audit);
+  }
+
+  // Rules 1.1-1.3: same technician or same client, cancelled audits do not block.
+  private async ensureNoOverlap(candidate: Audit, excludeId?: string): Promise<void> {
+    const audits = await this.repository.findAll();
+    const clashes = audits.some(
+      (other) =>
+        other.id !== excludeId &&
+        other.status !== 'CANCELADA' &&
+        (other.technician === candidate.technician || other.client === candidate.client) &&
+        other.overlapsWith(candidate),
+    );
+    if (clashes) throw new OverlappingAuditError();
   }
 }
