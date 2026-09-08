@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Audit } from './audit.entity.js';
+import { Audit, InvalidStateTransitionError } from './audit.entity.js';
 import type { AuditRepository } from './audit.repository.js';
 
 export class AuditNotFoundError extends Error {
@@ -30,6 +30,23 @@ export class AuditService {
   async createAudit(dateTime: Date, client: string, technician: string): Promise<Audit> {
     const audit = new Audit(randomUUID(), dateTime, client, technician);
     await this.ensureNoOverlap(audit);
+    return this.repository.save(audit);
+  }
+
+  // Full replacement (PUT semantics): revalidates overlap excluding the audit itself.
+  async updateAudit(
+    id: string,
+    dateTime: Date,
+    client: string,
+    technician: string,
+    confirm: boolean,
+  ): Promise<Audit> {
+    const audit = await this.getAudit(id);
+    if (audit.status !== 'PENDIENTE') throw new InvalidStateTransitionError(audit.status, 'edit');
+    const candidate = new Audit(audit.id, dateTime, client, technician);
+    await this.ensureNoOverlap(candidate, audit.id);
+    audit.update(dateTime, client, technician);
+    if (confirm) audit.confirm();
     return this.repository.save(audit);
   }
 

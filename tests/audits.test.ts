@@ -158,3 +158,92 @@ describe('DELETE /audits/:id', () => {
     expect((await request(app).post('/audits').send(base)).status).toBe(201);
   });
 });
+
+describe('PUT /audits/:id', () => {
+  const base = { fechaHora: '2027-03-10T10:00:00', cliente: 'acme', tecnico: 'Ana Ruiz' };
+
+  async function createAudit(app: ReturnType<typeof createApp>, body = base) {
+    const res = await request(app).post('/audits').send(body);
+    expect(res.status).toBe(201);
+    return res.body;
+  }
+
+  it('updates a pending audit', async () => {
+    const app = createApp();
+    const created = await createAudit(app);
+
+    const res = await request(app)
+      .put(`/audits/${created.id}`)
+      .send({ fechaHora: '2027-03-10T12:00:00', cliente: 'acme', tecnico: 'Ana Ruiz' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      id: created.id,
+      fechaHora: '2027-03-10T12:00:00',
+      estado: 'PENDIENTE',
+    });
+  });
+
+  it('does not clash with itself when keeping the same slot', async () => {
+    const app = createApp();
+    const created = await createAudit(app);
+
+    const res = await request(app).put(`/audits/${created.id}`).send(base);
+    expect(res.status).toBe(200);
+  });
+
+  it('rejects an update that overlaps another audit', async () => {
+    const app = createApp();
+    await createAudit(app);
+    const other = await createAudit(app, { ...base, fechaHora: '2027-03-10T12:00:00' });
+
+    const res = await request(app)
+      .put(`/audits/${other.id}`)
+      .send({ ...base, fechaHora: '2027-03-10T10:30:00' });
+    expect(res.status).toBe(409);
+  });
+
+  it('confirms a pending audit via estado: CONFIRMADA', async () => {
+    const app = createApp();
+    const created = await createAudit(app);
+
+    const res = await request(app)
+      .put(`/audits/${created.id}`)
+      .send({ ...base, estado: 'CONFIRMADA' });
+    expect(res.status).toBe(200);
+    expect(res.body.estado).toBe('CONFIRMADA');
+  });
+
+  it('rejects editing a confirmed audit', async () => {
+    const app = createApp();
+    const created = await createAudit(app);
+    await request(app).put(`/audits/${created.id}`).send({ ...base, estado: 'CONFIRMADA' });
+
+    const res = await request(app)
+      .put(`/audits/${created.id}`)
+      .send({ ...base, fechaHora: '2027-03-10T12:00:00' });
+    expect(res.status).toBe(409);
+  });
+
+  it('rejects any update on a cancelled audit', async () => {
+    const app = createApp();
+    const created = await createAudit(app);
+    await request(app).delete(`/audits/${created.id}`);
+
+    const res = await request(app).put(`/audits/${created.id}`).send(base);
+    expect(res.status).toBe(409);
+  });
+
+  it('returns 404 for a missing audit', async () => {
+    expect((await request(createApp()).put('/audits/nope').send(base)).status).toBe(404);
+  });
+
+  it.each([
+    ['missing fields', { cliente: 'acme' }],
+    ['estado CANCELADA (cancel via DELETE)', { ...base, estado: 'CANCELADA' }],
+  ])('rejects invalid body: %s', async (_name, body) => {
+    const app = createApp();
+    const created = await createAudit(app);
+    expect((await request(app).put(`/audits/${created.id}`).send(body)).status).toBe(400);
+  });
+});

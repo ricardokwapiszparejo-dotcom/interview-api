@@ -22,6 +22,18 @@ export class Audit {
   }
 
   // Exclusive boundary: an audit ending at 11:00 does not clash with one starting at 11:00.
+  update(dateTime: Date, client: string, technician: string): void {
+    if (this.status !== 'PENDIENTE') throw new InvalidStateTransitionError(this.status, 'edit');
+    this.dateTime = dateTime;
+    this.client = client;
+    this.technician = technician;
+  }
+
+  confirm(): void {
+    if (this.status !== 'PENDIENTE') throw new InvalidStateTransitionError(this.status, 'confirm');
+    this.status = 'CONFIRMADA';
+  }
+
   cancel(): void {
     if (this.status === 'CANCELADA') throw new InvalidStateTransitionError(this.status, 'cancel');
     this.status = 'CANCELADA';

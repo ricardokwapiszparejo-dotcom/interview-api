@@ -22,15 +22,25 @@ function toLocalIso(date: Date): string {
   );
 }
 
-function parseBody(body: unknown): { dateTime: Date; client: string; technician: string } | null {
+interface ParsedBody {
+  dateTime: Date;
+  client: string;
+  technician: string;
+  confirm: boolean;
+}
+
+// POST rejects estado outright; PUT accepts PENDIENTE (no-op) or CONFIRMADA. Cancelling goes through DELETE.
+function parseBody(body: unknown, allowStatus: boolean): ParsedBody | null {
   const { fechaHora, cliente, tecnico, estado } = (body ?? {}) as Record<string, unknown>;
-  if (estado !== undefined) return null;
+  if (!allowStatus && estado !== undefined) return null;
+  if (allowStatus && estado !== undefined && estado !== 'PENDIENTE' && estado !== 'CONFIRMADA')
+    return null;
   if (typeof fechaHora !== 'string' || typeof cliente !== 'string' || typeof tecnico !== 'string')
     return null;
   if (cliente.trim() === '' || tecnico.trim() === '') return null;
   const dateTime = new Date(fechaHora);
   if (Number.isNaN(dateTime.getTime())) return null;
-  return { dateTime, client: cliente.trim(), technician: tecnico.trim() };
+  return { dateTime, client: cliente.trim(), technician: tecnico.trim(), confirm: estado === 'CONFIRMADA' };
 }
 
 export function auditsRouter(service: AuditService): Router {
@@ -49,7 +59,7 @@ export function auditsRouter(service: AuditService): Router {
   });
 
   router.post('/', async (req, res) => {
-    const parsed = parseBody(req.body);
+    const parsed = parseBody(req.body, false);
     if (!parsed) {
       res.status(400).json({ error: 'fechaHora (ISO8601), cliente and tecnico are required; estado is not accepted' });
       return;
@@ -57,6 +67,26 @@ export function auditsRouter(service: AuditService): Router {
     try {
       const audit = await service.createAudit(parsed.dateTime, parsed.client, parsed.technician);
       res.status(201).json(toResponse(audit));
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
+  router.put('/:id', async (req, res) => {
+    const parsed = parseBody(req.body, true);
+    if (!parsed) {
+      res.status(400).json({ error: 'fechaHora (ISO8601), cliente and tecnico are required; estado may only be PENDIENTE or CONFIRMADA' });
+      return;
+    }
+    try {
+      const audit = await service.updateAudit(
+        req.params.id,
+        parsed.dateTime,
+        parsed.client,
+        parsed.technician,
+        parsed.confirm,
+      );
+      res.json(toResponse(audit));
     } catch (err) {
       handleError(err, res);
     }
