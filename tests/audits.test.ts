@@ -193,3 +193,11 @@ describe('PUT /audits/:id', () => {
     expect((await request(a).put(`/audits/${created.id}`).send(body)).status).toBe(400);
   });
 });
+
+describe('GET /', () => {
+  it('serves the test UI', async () => {
+    const res = await request(app()).get('/');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('text/html');
+  });
+});
