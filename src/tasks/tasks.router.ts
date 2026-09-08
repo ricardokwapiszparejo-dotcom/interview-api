@@ -1,8 +1,7 @@
 import { Router, type Response } from 'express';
-import { InMemoryTaskRepository } from './in-memory-task.repository.js';
-import { TaskNotFoundError, TaskService } from './task.service.js';
+import { TaskNotFoundError, type TaskService } from './task.service.js';
 
-export function tasksRouter(service = new TaskService(new InMemoryTaskRepository())): Router {
+export function tasksRouter(service: TaskService): Router {
   const router = Router();
 
   router.get('/', async (_req, res) => {
